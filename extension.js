@@ -47,7 +47,7 @@ function updateDecorations() {
         return;
     }
 
-    const regEx = /t\(["']LMID_\d{8}["']\)/g;
+    const regEx = /t\(["']LMID_\d{8}["']\s*\)?/g;
     const decorations = [];
 
     console.log("updateDecorations triggered");
