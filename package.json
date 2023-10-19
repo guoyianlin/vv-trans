@@ -2,15 +2,18 @@
     "name": "VV-Trans",
     "displayName": "VV-Trans",
     "description": "Show you the language you want.",
-    "version": "0.0.1",
+    "version": "0.0.4",
     "engines": {
         "vscode": "^1.83.0"
     },
     "categories": [
         "Other"
     ],
+    "publisher": "guoyian",
     "icon": "images/logo.png",
-    "activationEvents": [],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
     "main": "./extension.js",
     "contributes": {
         "commands": [
@@ -18,7 +21,17 @@
                 "command": "VV-Trans.translate",
                 "title": "vv-translate"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "VV-Trans Configuration",
+            "properties": {
+                "vvtrans.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable or disable VV-Trans"
+                }
+            }
+        }
     },
     "scripts": {
         "lint": "eslint .",
@@ -34,5 +47,9 @@
         "mocha": "^10.2.0",
         "typescript": "^5.2.2",
         "@vscode/test-electron": "^2.3.4"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/guoyianlin/vv-trans.git"
     }
 }

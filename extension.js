@@ -6,6 +6,7 @@ let disposable;
 let userConfig; // 用于存储用户自定义配置
 let decorationCache = new Map(); // 用于存储已计算的装饰信息：避免重复计算
 let corpus; // 缓存语料库数据
+// let prefix; // 表达式前缀
 
 function debounce(func, wait) {
     let timeout;
@@ -17,7 +18,7 @@ function debounce(func, wait) {
 
 // 判断文件类型是否受支持
 function isSupportedFileType(document) {
-    const supportedFileTypes = [".js", ".jsx", ".ts", ".tsx"];
+    const supportedFileTypes = [".js", ".jsx", ".ts", ".tsx", ".html"];
     const fileName = document.fileName;
     const fileExtension = path.extname(fileName);
     return supportedFileTypes.includes(fileExtension);
@@ -120,6 +121,10 @@ function activate(context) {
 
     // 获取用户配置
     userConfig = vscode.workspace.getConfiguration("vvtrans") || {};
+
+    if (!userConfig.enable) return;
+
+    // prefix = userConfig.prefix || "t";
 
     const corpusDirectory =
         userConfig.corpusDirectory ||
