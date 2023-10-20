@@ -72,7 +72,7 @@ function updateDecorations() {
             continue; // 跳过当前迭代
         }
 
-        const corpusText = corpus[LMID_key];
+        const corpusText = corpus[LMID_key] || "undefined";
 
         console.log("range", rangeKey, LMID_key, corpusText);
 
@@ -138,7 +138,7 @@ function activate(context) {
         // translate();
     });
 
-    const debouncedChangeTextDocument = debounce(updateDecorations, 500);
+    const debouncedChangeTextDocument = debounce(updateDecorations, 300);
 
     // 注册文本编辑器装饰器
     // context.subscriptions.push(
