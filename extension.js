@@ -6,6 +6,7 @@ let disposable;
 let userConfig; // 用于存储用户自定义配置
 let decorationCache = new Map(); // 用于存储已计算的装饰信息：避免重复计算
 let corpus; // 缓存语料库数据
+let reversedCorpus; // 将 corpus 中的 key 和 value 对调并缓存
 // let prefix; // 表达式前缀
 
 function debounce(func, wait) {
@@ -50,8 +51,6 @@ function updateDecorations() {
     const regEx = /t\(["']LMID_\d{8}["']\s*\)?/g;
     const decorations = [];
 
-    console.log("updateDecorations triggered");
-
     let match;
     while ((match = regEx.exec(text))) {
         const startPos = activeEditor.document.positionAt(match.index);
@@ -64,8 +63,6 @@ function updateDecorations() {
 
         const rangeKey = `${LMID_key}-${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`;
 
-        console.log("range", rangeKey);
-
         if (decorationCache.has(rangeKey)) {
             console.log("has range", rangeKey);
             decorations.push(decorationCache.get(rangeKey));
@@ -73,8 +70,6 @@ function updateDecorations() {
         }
 
         const corpusText = corpus[LMID_key] || "undefined";
-
-        console.log("range", rangeKey, LMID_key, corpusText);
 
         if (corpusText) {
             // 根据用户配置或默认值设置样式
@@ -107,10 +102,7 @@ function readCorpus(corpusDirectory) {
         const corpusData = fs.readFileSync(corpusDirectory, "utf8");
         return JSON.parse(corpusData);
     } catch (error) {
-        console.error("语料库文件读取失败", error);
-        vscode.window.showErrorMessage(
-            "语料库文件读取失败，请重新配置语料库目录"
-        );
+        vscode.window.showErrorMessage("语料库读取失败，请重新配置语料库目录");
         return null;
     }
 }
@@ -170,6 +162,64 @@ function activate(context) {
     }
 
     context.subscriptions.push(disposable);
+
+    // 新增命令：一键替换
+    const replaceDisposable = vscode.commands.registerCommand(
+        "VV-Trans.replaceI18n",
+        () => {
+            if (!corpus) {
+                vscode.window.showErrorMessage("语料库未加载。");
+                return;
+            }
+
+            const activeEditor = vscode.window.activeTextEditor;
+            if (!activeEditor) {
+                vscode.window.showErrorMessage("没有活动文本编辑器。");
+                return;
+            }
+
+            const text = activeEditor.document.getText();
+            if (!text) {
+                return;
+            }
+
+            console.log("VV-Trans.replace");
+
+            // 将 corpus 中的 key 和 value 对调并缓存
+            if (!reversedCorpus) {
+                reversedCorpus = {};
+                for (const key in corpus) {
+                    const value = corpus[key];
+                    reversedCorpus[value] = key;
+                }
+            }
+
+            const regEx = /(?<![a-zA-Z])t\(["'](?!LMID_)([^"']+)["']\)/g;
+
+            activeEditor.edit((editBuilder) => {
+                let match;
+                while ((match = regEx.exec(text))) {
+                    const startPos = activeEditor.document.positionAt(
+                        match.index
+                    );
+                    const endPos = activeEditor.document.positionAt(
+                        match.index + match[0].length
+                    );
+                    const range = new vscode.Range(startPos, endPos);
+
+                    const LMID_value = match[1];
+                    const LMID_key = reversedCorpus[LMID_value];
+
+                    if (LMID_key) {
+                        const newCode = `t('${LMID_key}' /* ${LMID_value} */)`;
+                        editBuilder.replace(range, newCode);
+                    }
+                }
+            });
+        }
+    );
+
+    context.subscriptions.push(replaceDisposable);
 }
 
 // 当插件停用时执行清理工作

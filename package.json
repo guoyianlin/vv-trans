@@ -2,7 +2,7 @@
     "name": "VV-Trans",
     "displayName": "VV-Trans",
     "description": "Show you the language you want.",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "engines": {
         "vscode": "^1.83.0"
     },
@@ -20,6 +20,10 @@
             {
                 "command": "VV-Trans.translate",
                 "title": "vv-translate"
+            },
+            {
+                "command": "VV-Trans.replaceI18n",
+                "title": "vv-replace"
             }
         ],
         "configuration": {
