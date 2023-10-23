@@ -2,7 +2,7 @@
     "name": "VV-Trans",
     "displayName": "VV-Trans",
     "description": "Show you the language you want.",
-    "version": "0.0.9",
+    "version": "0.1.0",
     "engines": {
         "vscode": "^1.83.0"
     },
@@ -24,6 +24,10 @@
             {
                 "command": "VV-Trans.replaceI18n",
                 "title": "vv-replace"
+            },
+            {
+                "command": "VV-Trans.refreshZhData",
+                "title": "vv-refreshZh"
             }
         ],
         "configuration": {
