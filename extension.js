@@ -34,8 +34,6 @@ function checkAndClearDecorationCache() {
 
 // 当文本编辑器的选择发生变化时，更新装饰器
 function updateDecorations() {
-    console.log("changeTextDocument");
-
     if (!corpus) return;
 
     const activeEditor = vscode.window.activeTextEditor;
@@ -48,7 +46,7 @@ function updateDecorations() {
         return;
     }
 
-    const regEx = /t\(["']LMID_\d{8}["']\s*\)?/g;
+    const regEx = /t\s*\(["'`]LMID_\d+["'`]\s*\)?/g;
     const decorations = [];
 
     let match;
@@ -58,38 +56,48 @@ function updateDecorations() {
             match.index + match[0].length
         );
         const range = new vscode.Range(startPos, endPos);
+
         // 获取 LMID_xxx 键
-        const LMID_key = match[0].substring(3, match[0].length - 2);
+        const keyMatch = match[0].match(/["'`](.*?)["'`]/);
+        const LMID_key = keyMatch && keyMatch[1];
+        // const LMID_key = match[0].substring(3, match[0].length - 2);
 
-        const rangeKey = `${LMID_key}-${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`;
+        if (LMID_key && LMID_key.length === 13) {
+            const rangeKey = `${LMID_key}-${range.start.line}:${range.start.character}-${range.end.line}:${range.end.character}`;
 
-        if (decorationCache.has(rangeKey)) {
-            console.log("has range", rangeKey);
-            decorations.push(decorationCache.get(rangeKey));
-            continue; // 跳过当前迭代
-        }
-
-        const corpusText = corpus[LMID_key] || "undefined";
-
-        if (corpusText) {
-            // 根据用户配置或默认值设置样式
-            const transStyle = userConfig.transStyle || {};
+            if (decorationCache.has(rangeKey)) {
+                decorations.push(decorationCache.get(rangeKey));
+                continue; // 跳过当前迭代
+            }
 
             const decoration = {
                 range,
                 renderOptions: {
                     after: {
-                        contentText: corpusText,
+                        contentText: corpus[LMID_key] || "undefined",
                         fontStyle: "italic",
                         color: "#FFA22D",
                         opacity: 0.8,
-                        ...transStyle,
+                        ...(userConfig.transStyle || {}),
                     },
                 },
             };
 
             decorationCache.set(rangeKey, decoration);
             decorations.push(decoration);
+        } else {
+            decorations.push({
+                range,
+                renderOptions: {
+                    after: {
+                        contentText: "undefined",
+                        fontStyle: "italic",
+                        color: "#FFA22D",
+                        opacity: 0.8,
+                        ...(userConfig.transStyle || {}),
+                    },
+                },
+            });
         }
     }
 
@@ -151,7 +159,6 @@ function activate(context) {
     vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor && editor.document && isSupportedFileType(editor.document)) {
             // 当切换到一个新的文本编辑器时，重新初始化和执行翻译
-            console.log("Active");
             debouncedChangeTextDocument();
             checkAndClearDecorationCache();
         }
@@ -183,8 +190,6 @@ function activate(context) {
                 return;
             }
 
-            console.log("VV-Trans.replace");
-
             // 将 corpus 中的 key 和 value 对调并缓存
             if (!reversedCorpus) {
                 reversedCorpus = {};
@@ -194,7 +199,8 @@ function activate(context) {
                 }
             }
 
-            const regEx = /(?<![a-zA-Z])t\(["'](?!LMID_)([^"']+)["']\)/g;
+            // const regEx = /(?<![a-zA-Z])t\(["'`](?!LMID_)([^"']+)["'`]\)/g;
+            const regEx = /(?<!\w)t\s*\(["'`](?!LMID_)([^"']+)["'`]\s*\)/g;
 
             activeEditor.edit((editBuilder) => {
                 let match;
@@ -220,6 +226,31 @@ function activate(context) {
     );
 
     context.subscriptions.push(replaceDisposable);
+
+    // 重新获取 zh.json 语料库
+    const refreshZhDisposable = vscode.commands.registerCommand(
+        "VV-Trans.refreshZhData",
+        () => {
+            corpus = readCorpus(corpusDirectory);
+
+            if (!corpus) {
+                vscode.window.showErrorMessage("语料库未加载。");
+                return;
+            }
+
+            const newReversedCorpus = {};
+            for (const key in corpus) {
+                const value = corpus[key];
+                newReversedCorpus[value] = key;
+            }
+
+            reversedCorpus = newReversedCorpus;
+
+            vscode.window.showInformationMessage("语料库已更新！");
+        }
+    );
+
+    context.subscriptions.push(refreshZhDisposable);
 }
 
 // 当插件停用时执行清理工作
