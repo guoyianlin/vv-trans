@@ -21,6 +21,12 @@ VV-Trans 是为 vv 开发人员设计的 Visual Studio Code 扩展插件，旨�
 5. 一键替换：执行 "vv-replace" 命令一键替换，将其替换为语料库中的键（t('xxx') -> t(LMID_key)）
 6. 定制样式：自定义语料文本样式
 
+## 内置命令
+
+-   `vv-translate`: 语料翻译，为 t(LMID_key) 添加语料注释，方便阅读和检查
+-   `vv-replace`：将中文语料替换为语料库中的键，t('xxx') -> t(LMID_key) 节省时间提高效率
+-   `vv-refreshZh`: 当语料发生变化执行此命令，更新插件缓存的语料数据
+
 ## 配置选项
 
 -   `corpusDirectory`: 语料库目录的路径，默认为项目根目录下的 `.builtinLanguage/zh.json`。
