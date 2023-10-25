@@ -6,7 +6,7 @@ let disposable;
 let userConfig; // 用于存储用户自定义配置
 let decorationCache = new Map(); // 用于存储已计算的装饰信息：避免重复计算
 let corpus; // 缓存语料库数据
-let reversedCorpus; // 将 corpus 中的 key 和 value 对调并缓存
+let reversedCorpus = new Map(); // 将 corpus 中的 key 和 value 对调并缓存
 // let prefix; // 表达式前缀
 
 function debounce(func, wait) {
@@ -191,16 +191,17 @@ function activate(context) {
             }
 
             // 将 corpus 中的 key 和 value 对调并缓存
-            if (!reversedCorpus) {
-                reversedCorpus = {};
+            if (reversedCorpus.size === 0) {
                 for (const key in corpus) {
                     const value = corpus[key];
-                    reversedCorpus[value] = key;
+                    if (!reversedCorpus.has(value)) {
+                        reversedCorpus.set(value, key);
+                    }
                 }
             }
 
             // const regEx = /(?<![a-zA-Z])t\(["'`](?!LMID_)([^"']+)["'`]\)/g;
-            const regEx = /(?<!\w)t\s*\(["'`](?!LMID_)([^"']+)["'`]\s*\)/g;
+            const regEx = /(?<!\w)t\s*\(["'`](?!LMID_)([^"']+)["'`]/g;
 
             activeEditor.edit((editBuilder) => {
                 let match;
@@ -214,10 +215,10 @@ function activate(context) {
                     const range = new vscode.Range(startPos, endPos);
 
                     const LMID_value = match[1];
-                    const LMID_key = reversedCorpus[LMID_value];
+                    const LMID_key = reversedCorpus.get(LMID_value);
 
                     if (LMID_key) {
-                        const newCode = `t('${LMID_key}' /* ${LMID_value} */)`;
+                        const newCode = `t('${LMID_key}' /* ${LMID_value} */`;
                         editBuilder.replace(range, newCode);
                     }
                 }
@@ -238,13 +239,14 @@ function activate(context) {
                 return;
             }
 
-            const newReversedCorpus = {};
+            reversedCorpus.clear();
+
             for (const key in corpus) {
                 const value = corpus[key];
-                newReversedCorpus[value] = key;
+                if (!reversedCorpus.has(value)) {
+                    reversedCorpus.set(value, key);
+                }
             }
-
-            reversedCorpus = newReversedCorpus;
 
             vscode.window.showInformationMessage("语料库已更新！");
         }
