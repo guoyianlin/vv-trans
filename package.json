@@ -2,7 +2,7 @@
     "name": "VV-Trans",
     "displayName": "VV-Trans",
     "description": "Show you the language you want.",
-    "version": "0.1.0",
+    "version": "0.1.10",
     "engines": {
         "vscode": "^1.83.0"
     },
